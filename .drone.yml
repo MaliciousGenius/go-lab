@@ -15,8 +15,8 @@ pipeline:
 
   publish:
     image: plugins/docker
-    registry: registry.idkb.ru
-    repo: registry.idkb.ru/drone/test
+    registry: registry.udkb.ru
+    repo: registry.udkb.ru/img/app
     tag:
       - latest
       - "0.1.${DRONE_COMMIT_SHA}"
