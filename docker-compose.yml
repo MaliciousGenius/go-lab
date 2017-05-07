@@ -1,0 +1,31 @@
+version: "3.1"
+
+services:
+  redmine:
+    image: registry.udkb.ru/img/app:latest
+    environment:
+      SOURCE: wikipedia.ru
+    networks:
+      - external
+    volumes:
+      - app:/output:rw
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=external"
+        - "traefik.frontend.entryPoints=http,https"
+        - "traefik.frontend.rule=Host:app.udkb.ru"
+        - "traefik.port=3000"
+
+networks:
+  external:
+    external: true
+
+volumes:
+  app:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/data/app"
+      o: bind
