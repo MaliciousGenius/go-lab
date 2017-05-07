@@ -1,0 +1,26 @@
+debug: true
+pipeline:
+  build:
+    image: golang:alpine
+    environment:
+      - GOPATH=/drone
+    commands:
+      - apk update
+      - apk add git
+      - go get
+      - go build -o hello .
+    when:
+      branch: master
+      event: push
+
+  publish:
+    image: plugins/docker
+    registry: registry.idkb.ru
+    repo: registry.idkb.ru/drone/test
+    tag:
+      - latest
+      - "0.1.${DRONE_COMMIT_SHA}"
+    insecure: true
+    when:
+      branch: master
+      event: push
