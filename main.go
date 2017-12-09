@@ -60,21 +60,26 @@ func ReadListSources() *Source {
 	return sl
 }
 
-func ReadNews(sourceFeed *Feed) {
+func ReadNews(sourceFeed *Feed, news *News) *News {
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseURL(sourceFeed.Url)
 	if err != nil {
 		log.Fatal("Unable to get the feed. Error is ", err)
-		return
 	}
 
 	newsItems := feed.Items
-	for _, newsItem := range newsItems {
-		fmt.Println(newsItem.Title)
-		fmt.Println(newsItem.Link)
-	}
 
-	fmt.Println("============================")
+	for _, newsItem := range newsItems {
+		item := new(Item)
+		item.Title = newsItem.Title
+		item.Url = newsItem.Link
+		item.Time = *newsItem.PublishedParsed
+		item.Content = newsItem.Content
+
+		news.List = append(news.List, item)
+	}
+	return news
+
 }
 
 func main() {
@@ -82,8 +87,19 @@ func main() {
 		InitMinSources()
 	}
 
+	news := new(News)
+
 	source := ReadListSources()
 	for _, i := range source.List {
-		ReadNews(i)
+		_ = ReadNews(i, news)
 	}
+
+	file, _ := os.OpenFile("news.json", os.O_CREATE|os.O_WRONLY, 0777)
+	defer file.Close()
+
+	enc := json.NewEncoder(file)
+	enc.SetIndent("", "  ")
+	enc.Encode(news)
+
+	fmt.Println(news)
 }
