@@ -1,16 +1,89 @@
-package test
+package main
 
 import (
-	"io"
-	"net/http"
+	"encoding/json"
+	"os"
+	"fmt"
+	"time"
+
+	"github.com/mmcdole/gofeed"
+	"log"
 )
 
-func hello(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Hello world!")
+type Feed struct {
+	Name    string
+	Url     string
+}
+
+type Source struct {
+	List    []*Feed
+}
+
+type Item struct {
+	Title   string
+	Time    time.Time
+	Url     string
+	Content string
+}
+
+type News struct {
+	List []*Item
+}
+
+func InitMinSources() {
+	f1 := &Feed{"lenta.ru", "https://lenta.ru/l/r/EX/import.rss"}
+	f2 := &Feed{"yandex.ru", "https://news.yandex.ru/index.rss"}
+	f3 := &Feed{"echo.msk.ru", "http://echo.msk.ru/news.rss"}
+
+	source := new(Source)
+	source.List = append(source.List, f1)
+	source.List = append(source.List, f2)
+	source.List = append(source.List, f3)
+
+	file, _ := os.OpenFile("feed.json", os.O_CREATE|os.O_WRONLY, 0777)
+	defer file.Close()
+
+	enc := json.NewEncoder(file)
+	enc.SetIndent("", "  ")
+	enc.Encode(source)
+}
+
+func ReadListSources() *Source {
+	file, _ := os.Open("feed.json")
+	defer file.Close()
+
+	sl := new(Source)
+
+	dec := json.NewDecoder(file)
+	dec.Decode(sl)
+
+	return sl
+}
+
+func ReadNews(sourceFeed *Feed) {
+	fp := gofeed.NewParser()
+	feed, err := fp.ParseURL(sourceFeed.Url)
+	if err != nil {
+		log.Fatal("Unable to get the feed. Error is ", err)
+		return
+	}
+
+	newsItems := feed.Items
+	for _, newsItem := range newsItems {
+		fmt.Println(newsItem.Title)
+		fmt.Println(newsItem.Link)
+	}
+
+	fmt.Println("============================")
 }
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", hello)
-	http.ListenAndServe(":8000", mux)
+	if _, err := os.Stat("feed.json"); os.IsNotExist(err) {
+		InitMinSources()
+	}
+
+	source := ReadListSources()
+	for _, i := range source.List {
+		ReadNews(i)
+	}
 }
