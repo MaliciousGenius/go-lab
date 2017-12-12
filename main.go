@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"fmt"
 	"time"
 
 	"github.com/mmcdole/gofeed"
@@ -101,5 +100,5 @@ func main() {
 	enc.SetIndent("", "  ")
 	enc.Encode(news)
 
-	fmt.Println(news)
+
 }
